@@ -18,15 +18,17 @@ Two useful starting points:
 - [NAIF's Most Used APIs](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/info/mostused.html)
   has quite a few useful recipes.
 
+## Kernels
+
 The tricky part about programming in SPICE is that most SPICE programs
 require SPICE "kernels" which must be downloaded from NAIF. Kernels
 contain models and data which are then used by the high-level SPICE
 functions. So, for instance, you can copy the occultation example from
 the Most Used APIs page, but it won't work unless you also have the
 "cas_2005_v17.tm" kernel used in the example -- and the page doesn't
-give you any hint where to get that. And if you change the observer
+give you any hint where to get that. Even if you change the observer
 to EARTH instead of CASSINI, it still won't work because then you
-need another SPICE kernel to get the Saturn, Sun and Earth data.
+need other SPICE kernels to get the Saturn, Sun and Earth data.
 
 ## Finding Kernels
 
@@ -36,7 +38,7 @@ seem to be any document listing what kernels are available and what's
 in each of them, so plan on spending some time hunting.
 Here's what I've learned so far:
 
-[The top-level page for SPICE kernels](https://naif.jpl.nasa.gov/naif/data.html)
+[The SPICE Data page](https://naif.jpl.nasa.gov/naif/data.html)
 has three links:
 
 - [PDS Archived SPICE Data Sets](https://naif.jpl.nasa.gov/naif/data_pds_archived.html) -
@@ -61,7 +63,7 @@ you may already know the filename you need. For instance, suppose
 an example uses *de421.bsp* and you just need to know where to find it.
 
 Here's a handy trick. You can get a full listing of the directory
-structure for the generic kernels with the lftp program:
+structure of a remote file server with the lftp program's *du* command:
 
 ```
 lftp https://naif.jpl.nasa.gov/pub/naif/generic_kernels/
@@ -77,9 +79,9 @@ do you any good.
 
 (There ought to be some way to do this using wget or curl, but
 I couldn't find a way that actually worked. Even better, I'd like
-to fetch the whole directory structure but only files starting with
-aaa or AAA, not the actual data files. Anyone know how to do that?
-I may eventually write a Python script for it.)
+to fetch all files starting with aaa or AAA throughout the whole
+directory structure, but nothing else.
+Anyone know how to do that? I may eventually write a Python script.)
 
 Now that you have generic_manifest.txt, you can grep for filenames:
 ```
@@ -104,7 +106,7 @@ just for the spacecraft you're interested in, like Cassini.
 The Generic Kernels don't have a helpful page explaining what's what:
 you have to click around in the data,
 (https://naif.jpl.nasa.gov/pub/naif/generic_kernels/)
-to see what's what.
+to see what lives where.
 
 There's a file called *aareadme.txt* that explains the other subdirectories:
 - dsk, Digital Shape Kernel (for modeling the shape of a few natural bodies)
@@ -118,22 +120,29 @@ There's a file called *aareadme.txt* that explains the other subdirectories:
   relative to the center of the earth).
 - stars, a few star catalogs.
 
-In each of these directories (and most of their subdirectories), the
-file *aa_summaries.txt* gives you information about what's there.
+In each of these directories (and most of their subdirectories)
+there should be files with names like *AAA_README* or
+file *aa_summaries.txt* (they're not consistent about filenames,
+but anything starting with aaa or AAA is probably useful)
+with information about what's there.
 
 So, suppose I want to write a program to see when Ganymede transits Jupiter.
 Probably a lot of kernels have Jupiter in them, but Ganymede will be
 harder, so let's start by looking for that. It's a natural satellite,
-so I'll guess it will be somewhere
-*https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk*,
-so I go there. *AAREADME_SPKs.txt* in that directory isn't helpful,
-just generic information about kernels, but there are subdirectories
+so I'll guess it will be somewhere in the Spacecraft and Planet Kernels
+since that's supposed to include natural satellites.
+So I go to
+*https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk*.
+
+*AAREADME_SPKs.txt* in that directory isn't helpful,
+just generic information about kernels. There are subdirectories
 *asteroids, comets, lagrange_point, planets, satellites, stations*.
-In *satellites*, the file *AAREADME_Satellite_SPKs* tells me that
-there may be one or several files for each planet that has satellites,
-and that there's no overlap: so Ganymede will be in only one of the
-Jupiter SPK files. It also tells me that the *aa_summaries* file gives
-me a listing of which satellites are in which file.
+*satellites* looks likely. In there, the file *AAREADME_Satellite_SPKs*
+tells me that there may be one or several files for each planet that
+has satellites, and that there's no overlap: so Ganymede will be in
+only one of the Jupiter SPK files. It also tells me that the
+*aa_summaries* file gives me a listing of which satellites are in
+which file.
 
 So next, I read
 [aa_summaries.txt](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/aa_summaries.txt)
@@ -141,17 +150,19 @@ in that directory, and right away I see that
 ```
 GANYMEDE (503) w.r.t. JUPITER BARYCENTER (5)
 ```
-is in jup310.bsp, so that's the file I want to download.
+is in
+[jup310.bsp](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/jup310.bsp),
+so I'll try downloading that file (and cross my fingers).
 
 You'll generally find you need several kernels. For instance,
-for Ganymede and Jupiter, when I tried it with just jup310.bsp
-I got an error about needing leap seconds, and when I fixed that
-I got a different error. In the end,
-I needed naif0009.tls for leap seconds,
-jup310.bsp for Ganymede and Jupiter,
+for Ganymede and Jupiter, when I tried it with just *jup310.bsp*
+I got an error about needing leap seconds, and when I added a kernel
+for that I got a different error. In the end,
+I needed *naif0009.tls* for leap seconds,
+*jup310.bsp* for Ganymede and Jupiter,
 and
-pck00008.tpc for a variable called BODY503_RADII
-(I guess jup310.bsp has orbits but not sizes).
+*pck00008.tpc* for a variable called ```BODY503_RADII``` --
+I guess *jup310.bsp* has orbits but not sizes.
 
 Figuring out what kernels you need is a fairly elaborate and
 mysterious process and is definitely the hardest part of using SPICE.
@@ -198,13 +209,14 @@ you have no idea what kernels you need to make the examples work.
 
 ## RTFM
 
-I know I've been negative about the documentation: it's mostly poorly
+I know I've been negative about the documentation: the overviews,
+lessons and examples mostly poorly
 written and makes it very hard to get started or to figure out kernels.
 But the documentation for individual functions is quite extensive and
 well worth reading. For instance, there are some nice examples of
 how to find occultations of Titan by Saturn and vice versa in the
 [gfoclt documentation page](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/gfoclt.html)
-and that's fairly typical for documentation of SPICE functions:
-there's a lot of good information there even if some of the examples
+and that's fairly typical for documentation of SPICE functions.
+There's a lot of good information there even if some of the examples
 aren't clear about what kernels they use.
 
