@@ -88,7 +88,7 @@ $ grep de421.bsp generic_manifest.txt
 ```
 
 Append the pathname it gives you to
-*https://naif.jpl.nasa.gov/pub/naif/generic_kernels/*
+```https://naif.jpl.nasa.gov/pub/naif/generic_kernels/```
 so you can fetch the file with wget:
 
 ```
@@ -192,7 +192,7 @@ I'm not sure I see the advantage of this; I think I'm going to stick
 to separate *furnsh* calls built into my Python scripts so my scripts
 can work without needing a .tm file. That's one of the problems with
 those otherwise useful examples on the
-[Most Used APIs](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/info/mostused.html}
+[Most Used APIs](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/info/mostused.html)
 page -- since they assume a .tm file but they don't include that file,
 you have no idea what kernels you need to make the examples work.
 
